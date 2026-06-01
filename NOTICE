@@ -1,0 +1,29 @@
+humanizer-voiceprint
+=====================
+
+This project is a fork and combination of two MIT-licensed works.
+
+1. Base skill: blader/humanizer
+   https://github.com/blader/humanizer
+   MIT License, Copyright (c) 2025 Siqi Chen
+   The skill body and all 30 AI-writing detection patterns originate here.
+   The upstream LICENSE is preserved in this repository as LICENSE.
+
+2. Voice-fingerprint and saved-profile mechanism: numen-tech/slopornot
+   (the "agentic-humanizer" skill)
+   https://github.com/numen-tech/slopornot
+   MIT License, Copyright (c) 2025 Siqi Chen, Copyright (c) 2026 Thilak Rao
+   The persistent preference profile and the one-time stylometric voice
+   fingerprint design (storage layout, extraction schema, cache-by-hash,
+   and the field set) are adapted from that project.
+
+Changes made in this fork:
+   - Profile and voice machinery reworked into a single rewrite pass rather
+     than the slopornot 5-pass scoring loop.
+   - Ported to Windows/PowerShell. No macOS app dependency and no
+     Slop or Not Pro detector/readability/cleanup backend.
+   - Storage namespace changed to $HOME/.humanizer/ to avoid colliding with
+     the slopornot plugin's $HOME/.agentic-humanizer/.
+
+Both upstream projects are MIT licensed; this fork is distributed under the
+same MIT terms.

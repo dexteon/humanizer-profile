@@ -1,6 +1,20 @@
-# Humanizer
+# Humanizer (voiceprint fork)
 
 A skill for Claude Code and OpenCode that removes signs of AI-generated writing from text, making it sound more natural and human.
+
+## Fork and attribution
+
+This is a fork of [blader/humanizer](https://github.com/blader/humanizer) (MIT, copyright 2025 Siqi Chen). The original skill and all 30 detection patterns are that project's work; full credit goes there.
+
+This fork adds a persistent preference profile and a one-time voice fingerprint so a writing sample is analyzed once and reused across runs. That mechanism is adapted from the `agentic-humanizer` skill in [numen-tech/slopornot](https://github.com/numen-tech/slopornot) (MIT, copyright 2025 Siqi Chen, copyright 2026 Thilak Rao). It is reworked to run as a single disciplined pass on Windows/PowerShell with no Slop or Not Pro scoring loop and no macOS dependency. See `NOTICE` for the attribution summary.
+
+## What this fork adds
+
+- **Saved profile** at `$HOME/.humanizer/profile.json`: dialect, target reading grade, tone, and length policy. Set once, reused silently. Subcommands: `show profile`, `reset profile`, `set dialect=us grade=10 tone=professional length=±10`.
+- **Persistent voice fingerprint** at `$HOME/.humanizer/voice-fingerprint.json`, extracted once from a writing sample (`$HOME/.humanizer/voice.txt`) and cached by content hash. Subcommands: `show voice`, `reset voice`, `set voice=<path>`. Inline overrides: `voice=<path>`, `voice=off`, `voice-skip`.
+- Still a single rewrite pass. The profile and fingerprint apply as constraints on that pass, not as extra loops. The em-dash ban and the "never alter verbatim quotes, legal text, section numbers, or data" rule override everything else.
+
+Details live in `references/voice-fingerprint.md`.
 
 ## Installation
 
@@ -180,6 +194,7 @@ The skill also includes a final "obviously AI generated" audit pass and a second
 
 ## Version History
 
+- **2.8.0** - Fork: added a saved preference profile (dialect, grade, tone, length) and a persistent voice fingerprint extracted once from a writing sample and reused across runs. Voice mechanism adapted from numen-tech/slopornot, reworked to Windows/PowerShell and a single pass. No change to the 30 patterns.
 - **2.7.0** - Added pattern #30 (diff-anchored writing); made em/en dashes a hard cut rather than "overuse"; expanded #21 to cover speculative gap-filling ("maintains a low profile"). 30 patterns total.
 - **2.6.0** - Cleanup pass: consolidated the duplicated workflow sections, gated the personality guidance to content where voice is wanted, removed the model-fingerprinting subsection, and condensed the worked example. No change to the 29 patterns.
 - **2.5.1** - Added a passive-voice / subjectless-fragment rule, raising the total to 29 patterns
@@ -194,4 +209,4 @@ The skill also includes a final "obviously AI generated" audit pass and a second
 
 ## License
 
-MIT
+MIT. See `LICENSE` (copyright 2025 Siqi Chen, from the upstream blader/humanizer project) and `NOTICE` for the attribution covering the adapted voice-fingerprint mechanism from numen-tech/slopornot.

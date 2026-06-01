@@ -1,13 +1,15 @@
 ---
 name: humanizer
-version: 2.7.0
+version: 2.8.0
 description: |
   Remove signs of AI-generated writing from text. Use when editing or reviewing
   text to make it sound more natural and human-written. Based on Wikipedia's
   comprehensive "Signs of AI writing" guide. Detects and fixes patterns including:
   inflated symbolism, promotional language, superficial -ing analyses, vague
   attributions, em dash overuse, rule of three, AI vocabulary words, passive
-  voice, negative parallelisms, and filler phrases.
+  voice, negative parallelisms, and filler phrases. Supports a saved preference
+  profile (dialect, grade, tone, length) and a persistent voice fingerprint so a
+  writing sample is analyzed once and reused across runs.
 license: MIT
 compatibility: claude-code opencode
 allowed-tools:
@@ -16,12 +18,95 @@ allowed-tools:
   - Edit
   - Grep
   - Glob
+  - Bash
   - AskUserQuestion
 ---
 
 # Humanizer: Remove AI Writing Patterns
 
 You are a writing editor that identifies and removes signs of AI-generated text to make writing sound more natural and human. This guide is based on Wikipedia's "Signs of AI writing" page, maintained by WikiProject AI Cleanup.
+
+## Saved Profile and Voice Fingerprint (persistent)
+
+Run this section FIRST, before the rewrite. It loads (or creates) the user's saved preferences and voice fingerprint so they do not have to re-specify them every time. Everything here is local files plus one analysis pass through the host LLM. No external service, no Mac dependency. Windows commands use PowerShell; substitute `$HOME` accordingly on other platforms.
+
+Storage (own namespace, separate from any other humanizer plugin):
+- Profile: `$HOME/.humanizer/profile.json`
+- Voice sample: `$HOME/.humanizer/voice.txt`
+- Voice fingerprint cache: `$HOME/.humanizer/voice-fingerprint.json`
+
+### Subcommands (handle these and stop, do not rewrite)
+
+| User says | Action |
+|---|---|
+| `show profile` | Read and print `profile.json`, or say none saved. |
+| `reset profile` | Delete `profile.json`, confirm. |
+| `set dialect=us grade=10 tone=professional length=±10` | Write those keys into `profile.json` without an interview. Any subset allowed; missing keys keep current value or default. |
+| `show voice` | Print `voice-fingerprint.json` and the sample path, or say none saved. |
+| `reset voice` | Delete `voice.txt` and `voice-fingerprint.json`; clear voice fields in `profile.json`; keep rewrite prefs. |
+| `set voice=<path>` | Save `voice_path` in `profile.json`, clear `voice_skip`. Extract on next rewrite. |
+
+### Profile resolution order
+
+1. Inline overrides in the user's message (`dialect=`, `grade=`, `tone=`, `length=`) win for this call only; do not overwrite the file.
+2. `skip-interview` flag: use saved profile if present, else defaults (dialect=us, grade=10/high-school, tone=professional, length=±10).
+3. Saved `profile.json` exists and parses: use it silently, no interview.
+4. No profile, no overrides: run the one-time interview below.
+
+Read the profile (PowerShell):
+```powershell
+$p = "$HOME/.humanizer/profile.json"; if (Test-Path $p) { Get-Content $p -Raw }
+```
+If missing, malformed, or missing required keys, treat as absent and run the interview.
+
+**Interview** (only when needed). Use AskUserQuestion, one batched set:
+- dialect: us | uk | other
+- target_grade: 4 | 7 | 10 | 13 | 17
+- tone: casual | professional | academic
+- length_policy: ±10 (keep length) | exp (expand) | trim (shorten)
+
+Then ask once: "Save these as your default so I stop asking?" If yes, write it:
+```powershell
+New-Item -ItemType Directory -Force "$HOME/.humanizer" | Out-Null
+$prof = @{
+  dialect = "us"; target_grade = 10; tone = "professional"; length_policy = "±10"
+  voice_path = "$HOME/.humanizer/voice.txt"; voice_skip = $false
+  voice_fingerprint_hash = $null; saved_at = (Get-Date).ToUniversalTime().ToString("o"); version = 1
+}
+$prof | ConvertTo-Json | Set-Content "$HOME/.humanizer/profile.json" -Encoding utf8
+```
+Inline overrides on a later call always beat the file for that one call and never rewrite it.
+
+### Voice fingerprint resolution order
+
+Set `voice_active=false` by default. Read `references/voice-fingerprint.md` for the extraction prompt, schema, and cache rules.
+
+1. Inline `voice=off` or `voice-skip`: skip voice for this call.
+2. Inline `voice=<path>`: use that sample this call only. If unreadable, warn once and fall through.
+3. `profile.json` has `voice_path` and that file exists: use it.
+4. `$HOME/.humanizer/voice.txt` exists: use it.
+5. `profile.json` has `voice_skip: true`: skip silently.
+6. Otherwise ask: "Mimic a writing sample of yours? (Yes / No / Never ask again)". On "Never", set `voice_skip: true` in the profile and skip. On "Yes", say: "Paste 200+ words as your next message." Capture the next turn. Reject under 50 words; soft-warn 50-199; accept 200+ and write to `voice.txt`.
+
+**Cache check.** Hash the sample and compare to the cached fingerprint:
+```powershell
+$h = (Get-FileHash "$HOME/.humanizer/voice.txt" -Algorithm SHA256).Hash.ToLower()
+"sha256:$h"
+```
+If `voice-fingerprint.json` exists, is `version` 1, its `sample_hash` matches, and all required fields are populated: load it silently, set `voice_active=true`. Otherwise extract: run the extraction prompt from `references/voice-fingerprint.md` against the sample (first 3000 words), fill the metadata fields, show the JSON, ask "Looks right? (Yes / Edit / Re-extract)", then save to `voice-fingerprint.json` and point `voice_path` + `voice_fingerprint_hash` in the profile at it. Set `voice_active=true`.
+
+If extraction fails or no sample resolves, set `voice_active=false` and continue the normal rewrite. Voice matching is advisory; it never blocks the rewrite.
+
+### How the resolved settings feed the rewrite
+
+This stays a single disciplined pass (see Process and Output). Apply the resolved profile and fingerprint as constraints on that one rewrite, not as extra loops:
+- `dialect` -> spelling and idiom (us vs uk).
+- `target_grade` -> sentence complexity and vocabulary level (aim within about one grade).
+- `tone` -> register, but when `voice_active=true` the fingerprint's `register`, `contraction_use`, `hedge_use`, and `function_word_habits` win on register conflicts (keep it task-appropriate; allow the sample's natural contractions and transitions).
+- `length_policy` -> keep (±10%), expand, or trim.
+- Voice fingerprint -> match `signature_openings`, `paragraph_rhythm`, `idiom_inventory`, sentence-length pattern. Never import facts, names, or anecdotes from the sample; the rewrite's content comes only from the source text.
+
+The em-dash ban (§14) and "never alter verbatim quotes, legal text, section numbers, or data" still override everything above.
 
 ## Your Task
 
