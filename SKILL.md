@@ -1,6 +1,6 @@
 ---
 name: humanizer
-version: 2.8.0
+version: 2.9.0
 description: |
   Remove signs of AI-generated writing from text. Use when editing or reviewing
   text to make it sound more natural and human-written. Based on Wikipedia's
@@ -31,9 +31,14 @@ You are a writing editor that identifies and removes signs of AI-generated text 
 Run this section FIRST, before the rewrite. It loads (or creates) the user's saved preferences and voice fingerprint so they do not have to re-specify them every time. Everything here is local files plus one analysis pass through the host LLM. No external service, no Mac dependency. Windows commands use PowerShell; substitute `$HOME` accordingly on other platforms.
 
 Storage (own namespace, separate from any other humanizer plugin):
-- Profile: `$HOME/.humanizer/profile.json`
-- Voice sample: `$HOME/.humanizer/voice.txt`
-- Voice fingerprint cache: `$HOME/.humanizer/voice-fingerprint.json`
+- Profile (rewrite prefs only): `$HOME/.humanizer/profile.json`
+- Voice library (one folder per named voice): `$HOME/.humanizer/voices/<name>/`
+  - Sample: `$HOME/.humanizer/voices/<name>/sample.txt`
+  - Fingerprint cache: `$HOME/.humanizer/voices/<name>/fingerprint.json`
+
+Voices are multi-target: you can save more than one (e.g. `teon`, `formal`, a client persona) and a voice applies to a rewrite ONLY when you name it (`voice=<name>`). With no voice named, the rewrite is a generic de-AI pass in no particular persona. The profile holds only rewrite preferences plus an optional `default_voice` (null by default, so nothing is auto-applied).
+
+Legacy note: earlier versions stored a single global `voice.txt` + `voice-fingerprint.json` and a `voice_path`/`voice_skip` in the profile. If you find those, migrate them once into `voices/<name>/` (ask the user for a name, default `me`), then delete the legacy files and the `voice_path`/`voice_fingerprint_hash`/`voice_skip` keys from the profile.
 
 ### Subcommands (handle these and stop, do not rewrite)
 
@@ -42,9 +47,12 @@ Storage (own namespace, separate from any other humanizer plugin):
 | `show profile` | Read and print `profile.json`, or say none saved. |
 | `reset profile` | Delete `profile.json`, confirm. |
 | `set dialect=us grade=10 tone=professional length=±10` | Write those keys into `profile.json` without an interview. Any subset allowed; missing keys keep current value or default. |
-| `show voice` | Print `voice-fingerprint.json` and the sample path, or say none saved. |
-| `reset voice` | Delete `voice.txt` and `voice-fingerprint.json`; clear voice fields in `profile.json`; keep rewrite prefs. |
-| `set voice=<path>` | Save `voice_path` in `profile.json`, clear `voice_skip`. Extract on next rewrite. |
+| `list voices` | List the folder names under `voices/`, and mark which is `default_voice` (or say "no default"). If none exist, say none saved. |
+| `add voice <name>` | Prompt the user to paste a writing sample, save it to `voices/<name>/sample.txt`, then extract the fingerprint. Reject under 50 words; soft-warn 50-199; accept 200+. |
+| `set voice <name>=<path>` | Copy the sample at `<path>` into `voices/<name>/sample.txt`. Extract on next rewrite. |
+| `show voice <name>` | Print `voices/<name>/fingerprint.json` and its sample path. With no `<name>`, run `list voices`. |
+| `reset voice <name>` | Delete the `voices/<name>/` folder. With no `<name>`, refuse and ask which voice (never delete all). |
+| `default voice <name>` / `default voice off` | Set `default_voice` in `profile.json` to `<name>` (must exist) or clear it. Off by default. |
 
 ### Profile resolution order
 
@@ -70,8 +78,7 @@ Then ask once: "Save these as your default so I stop asking?" If yes, write it:
 New-Item -ItemType Directory -Force "$HOME/.humanizer" | Out-Null
 $prof = @{
   dialect = "us"; target_grade = 10; tone = "professional"; length_policy = "±10"
-  voice_path = "$HOME/.humanizer/voice.txt"; voice_skip = $false
-  voice_fingerprint_hash = $null; saved_at = (Get-Date).ToUniversalTime().ToString("o"); version = 1
+  default_voice = $null; saved_at = (Get-Date).ToUniversalTime().ToString("o"); version = 1
 }
 $prof | ConvertTo-Json | Set-Content "$HOME/.humanizer/profile.json" -Encoding utf8
 ```
@@ -79,21 +86,22 @@ Inline overrides on a later call always beat the file for that one call and neve
 
 ### Voice fingerprint resolution order
 
-Set `voice_active=false` by default. Read `references/voice-fingerprint.md` for the extraction prompt, schema, and cache rules.
+Set `voice_active=false` by default. A voice applies ONLY when one is resolved by the order below; there is no forced global voice. Read `references/voice-fingerprint.md` for the extraction prompt, schema, and cache rules.
 
 1. Inline `voice=off` or `voice-skip`: skip voice for this call.
-2. Inline `voice=<path>`: use that sample this call only. If unreadable, warn once and fall through.
-3. `profile.json` has `voice_path` and that file exists: use it.
-4. `$HOME/.humanizer/voice.txt` exists: use it.
-5. `profile.json` has `voice_skip: true`: skip silently.
-6. Otherwise ask: "Mimic a writing sample of yours? (Yes / No / Never ask again)". On "Never", set `voice_skip: true` in the profile and skip. On "Yes", say: "Paste 200+ words as your next message." Capture the next turn. Reject under 50 words; soft-warn 50-199; accept 200+ and write to `voice.txt`.
+2. Inline `voice=<name>`: use `voices/<name>/`. If the folder does not exist, warn once, list the available voices, and fall through to no-voice.
+3. Inline `voice=<path>`: use that ad-hoc sample file this call only (not persisted). If unreadable, warn once and fall through.
+4. `profile.json` has `default_voice` set and `voices/<default_voice>/` exists: use it.
+5. Otherwise: no voice. Do a generic de-AI rewrite with `voice_active=false`. Do NOT auto-prompt for a sample (capturing a voice is the opt-in `add voice <name>` subcommand).
 
-**Cache check.** Hash the sample and compare to the cached fingerprint:
+Once a voice folder is resolved, set `voice_dir = $HOME/.humanizer/voices/<name>` and use `voice_dir/sample.txt` + `voice_dir/fingerprint.json`.
+
+**Cache check.** Hash the resolved sample and compare to that voice's cached fingerprint:
 ```powershell
-$h = (Get-FileHash "$HOME/.humanizer/voice.txt" -Algorithm SHA256).Hash.ToLower()
+$h = (Get-FileHash "$voice_dir/sample.txt" -Algorithm SHA256).Hash.ToLower()
 "sha256:$h"
 ```
-If `voice-fingerprint.json` exists, is `version` 1, its `sample_hash` matches, and all required fields are populated: load it silently, set `voice_active=true`. Otherwise extract: run the extraction prompt from `references/voice-fingerprint.md` against the sample (first 3000 words), fill the metadata fields, show the JSON, ask "Looks right? (Yes / Edit / Re-extract)", then save to `voice-fingerprint.json` and point `voice_path` + `voice_fingerprint_hash` in the profile at it. Set `voice_active=true`.
+If `voice_dir/fingerprint.json` exists, is `version` 1, its `sample_hash` matches, and all required fields are populated: load it silently, set `voice_active=true`. Otherwise extract: run the extraction prompt from `references/voice-fingerprint.md` against the sample (first 3000 words), fill the metadata fields (including `voice_name`), show the JSON, ask "Looks right? (Yes / Edit / Re-extract)", then save to `voice_dir/fingerprint.json`. Set `voice_active=true`.
 
 If extraction fails or no sample resolves, set `voice_active=false` and continue the normal rewrite. Voice matching is advisory; it never blocks the rewrite.
 
@@ -106,7 +114,7 @@ This stays a single disciplined pass (see Process and Output). Apply the resolve
 - `length_policy` -> keep (±10%), expand, or trim.
 - Voice fingerprint -> match `signature_openings`, `paragraph_rhythm`, `idiom_inventory`, sentence-length pattern. Never import facts, names, or anecdotes from the sample; the rewrite's content comes only from the source text.
 
-The em-dash ban (§14) and "never alter verbatim quotes, legal text, section numbers, or data" still override everything above.
+The em-dash ban (§14) and "never alter verbatim quotes, legal text, section numbers, or data" still override everything above. This includes the voice fingerprint: if a voice's `punctuation_quirks` records em-dash use (some people hand-write them), match the rhythm and diction but never reproduce the em-dashes. §14 always converts them to commas, periods, colons, or parentheses.
 
 ## Your Task
 
