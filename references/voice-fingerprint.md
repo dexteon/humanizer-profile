@@ -45,10 +45,11 @@ the orchestrator fills these in.
 - Keep every string short enough to reuse in a prompt.
 - If a trait is not visible, write "not enough evidence" for that field.
 - Every field under `fingerprint` is required. Do not omit fields.
-- Record punctuation habits truthfully, but note that the rewrite never
-  reproduces em-dashes or en-dashes even if the author uses them: the §14 ban
-  always converts them. If the sample uses them, say so in `punctuation_quirks`
-  and add "never reproduce the dashes" so the trait is not mistaken for a target.
+- Record punctuation habits truthfully, including em-dash or en-dash use. A
+  genuine dash habit in the sample outranks the §14 ban (see Voice Calibration
+  in SKILL.md): the rewrite may keep dashes at roughly the sample's frequency.
+  Note the observed frequency in `punctuation_quirks` so the rewrite matches it
+  instead of scattering dashes freely.
 </constraints>
 
 <fields_to_watch>
@@ -139,7 +140,7 @@ The rewrite in `SKILL.md` is one pass, not a loop. Apply the fingerprint as cons
 - Surface habits: `signature_openings`, `signature_closings`, `idiom_inventory`, `punctuation_quirks`.
 - `do_list` / `dont_list`: honor directly.
 
-Never import facts, names, or anecdotes from the sample. The rewrite's content comes only from the source text being humanized. The em-dash ban and the "do not alter verbatim quotes, legal text, section numbers, or data" rule override everything here.
+Never import facts, names, or anecdotes from the sample. The rewrite's content comes only from the source text being humanized. Never fabricate humanity either: no staged typos, grammar errors, slang, or invented first-person experience, and no caricature of the voice by amplifying its tics (see `references/writing-craft.md`). The "do not alter verbatim quotes, legal text, section numbers, or data" rule overrides everything here. The em-dash ban (§14) also holds unless the sample genuinely uses dashes, in which case match the sample's frequency.
 
 ## Failure modes
 
