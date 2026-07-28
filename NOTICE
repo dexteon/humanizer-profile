@@ -1,12 +1,12 @@
 humanizer-voiceprint
 =====================
 
-This project is a fork and combination of two MIT-licensed works.
+This project is a fork and combination of three MIT-licensed works.
 
 1. Base skill: blader/humanizer
    https://github.com/blader/humanizer
    MIT License, Copyright (c) 2025 Siqi Chen
-   The skill body and all 30 AI-writing detection patterns originate here.
+   The skill body and all 33 AI-writing detection patterns originate here.
    The upstream LICENSE is preserved in this repository as LICENSE.
 
 2. Voice-fingerprint and saved-profile mechanism: numen-tech/slopornot
@@ -16,6 +16,13 @@ This project is a fork and combination of two MIT-licensed works.
    The persistent preference profile and the one-time stylometric voice
    fingerprint design (storage layout, extraction schema, cache-by-hash,
    and the field set) are adapted from that project.
+
+3. Writing-craft rules: Anbeeld/WRITING.md (the "writing" skill, v1.4.1)
+   https://github.com/Anbeeld/WRITING.md
+   MIT License, Copyright (c) Anbeeld
+   references/writing-craft.md distills that project's editing-integrity
+   guards, no-fabricated-humanity safeguards, formula watchlist additions,
+   structural defaults, and long-form diagnostics.
 
 Changes made in this fork:
    - Profile and voice machinery reworked into a single rewrite pass rather

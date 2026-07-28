@@ -3,12 +3,16 @@ name: humanizer
 description: |
   Remove signs of AI-generated writing from text. Use when editing or reviewing
   text to make it sound more natural and human-written. Based on Wikipedia's
-  comprehensive "Signs of AI writing" guide. Detects and fixes patterns including:
+  comprehensive "Signs of AI writing" guide (33 patterns). Detects and fixes:
   inflated symbolism, promotional language, superficial -ing analyses, vague
   attributions, em dash overuse, rule of three, AI vocabulary words, passive
-  voice, negative parallelisms, and filler phrases. Supports a saved preference
-  profile (dialect, grade, tone, length) and a persistent voice fingerprint so a
-  writing sample is analyzed once and reused across runs.
+  voice, negative parallelisms, filler phrases, manufactured punchlines, and
+  aphorism formulas. Never invents facts, and guards against meaning shifts
+  (certainty, scope, attribution) during rewrites. Three invocation modes:
+  pasted text, file (in-place), embedded. Supports a saved preference profile
+  (dialect, grade, tone, length) and a persistent multi-voice fingerprint
+  library so writing samples are analyzed once and reused across runs. Loads
+  references/writing-craft.md for long-form reader-facing prose.
 license: MIT
 compatibility: claude-code opencode
 metadata:
@@ -113,7 +117,7 @@ This stays a single disciplined pass (see Process and Output). Apply the resolve
 - `target_grade` -> sentence complexity and vocabulary level (aim within about one grade).
 - `tone` -> register, but when `voice_active=true` the fingerprint's `register`, `contraction_use`, `hedge_use`, and `function_word_habits` win on register conflicts (keep it task-appropriate; allow the sample's natural contractions and transitions).
 - `length_policy` -> keep (±10%), expand, or trim.
-- Voice fingerprint -> match `signature_openings`, `paragraph_rhythm`, `idiom_inventory`, sentence-length pattern. Never import facts, names, or anecdotes from the sample; the rewrite's content comes only from the source text.
+- Voice fingerprint -> match `signature_openings`, `paragraph_rhythm`, `idiom_inventory`, sentence-length pattern. Never import facts, names, or anecdotes from the sample; the rewrite's content comes only from the source text. Match the sample's habits, not staged imperfection: never fabricate typos, grammar errors, slang, or first-person experience the sample and source don't contain, and don't caricature the voice by amplifying its tics.
 
 "Never alter verbatim quotes, legal text, section numbers, or data" still overrides everything above. The em-dash ban (§14) also holds, with one exception: when `voice_active=true` and the voice's `punctuation_quirks` records genuine em-dash use (some people hand-write them), the sample outranks the ban — keep em dashes at roughly the sample's frequency (see Voice Calibration). With no active voice, §14 always converts them to commas, periods, colons, or parentheses.
 
@@ -501,10 +505,14 @@ When you see these, lean toward leaving the prose alone — they are evidence of
 
 1. Read the input carefully and identify every instance of the patterns above.
 2. Write a **draft rewrite**. Check that it reads naturally aloud, varies sentence length, prefers specific details and simple constructions (is/are/has), and keeps the appropriate register.
-3. Ask two questions: **"What makes the below so obviously AI generated?"** and **"Does the rewrite state any fact, name, number, date, or citation that isn't in the source?"** Answer briefly. A fabrication is a defect even when it sounds more human than the vague original.
+3. Ask three questions: **"What makes the below so obviously AI generated?"**, **"Does the rewrite state any fact, name, number, date, or citation that isn't in the source?"**, and **"Did any claim's certainty, scope, negation, attribution, or causality shift in the rewrite?"** (see `references/writing-craft.md` for the full distortion list). Answer briefly. A fabrication or a meaning shift is a defect even when it sounds more human than the vague original.
 4. Revise into a **final rewrite** that addresses them and contains no em or en dashes (see §14).
 
 In pasted-text mode, deliver the draft, the brief "still-AI" bullets, the final rewrite, and (optionally) a short summary of changes. In file and embedded modes, run the same loop but deliver only what the mode calls for (see Invocation Modes).
+
+## Writing Craft (long-form and reader-facing prose)
+
+When the input is long-form or reader-facing prose (an article, doc, essay, email, application — more than a few paragraphs that a reader will actually see), read `references/writing-craft.md` before the rewrite and apply it during the audit. It adds meaning-preservation guards (don't shift certainty, scope, negation, attribution, or causality while de-AI-ing), a ban on fabricated humanity (no staged typos, slang, or invented anecdotes), structural diagnostics (catalog prose, dominant regularity, restatement), and output-integrity checks (placeholders, leaked tokens, broken markup). For short snippets, commit messages, or embedded one-liners, skip it.
 
 ## Reference
 
