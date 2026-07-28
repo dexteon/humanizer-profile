@@ -11,8 +11,8 @@ This fork adds a persistent preference profile and a one-time voice fingerprint 
 ## What this fork adds
 
 - **Saved profile** at `$HOME/.humanizer/profile.json`: dialect, target reading grade, tone, and length policy. Set once, reused silently. Subcommands: `show profile`, `reset profile`, `set dialect=us grade=10 tone=professional length=±10`.
-- **Persistent voice fingerprint** at `$HOME/.humanizer/voice-fingerprint.json`, extracted once from a writing sample (`$HOME/.humanizer/voice.txt`) and cached by content hash. Subcommands: `show voice`, `reset voice`, `set voice=<path>`. Inline overrides: `voice=<path>`, `voice=off`, `voice-skip`.
-- Still a single rewrite pass. The profile and fingerprint apply as constraints on that pass, not as extra loops. The em-dash ban and the "never alter verbatim quotes, legal text, section numbers, or data" rule override everything else.
+- **Multi-target voice library** under `$HOME/.humanizer/voices/<name>/` (a `sample.txt` plus a `fingerprint.json` cached by content hash, one folder per named voice). You can save more than one voice (e.g. `teon`, `formal`, a client persona). A voice applies to a rewrite **only when you name it** (`voice=<name>`); with no voice named the rewrite is a generic de-AI pass in no persona. Subcommands: `list voices`, `add voice <name>`, `set voice <name>=<path>`, `show voice <name>`, `reset voice <name>`, `default voice <name>` / `default voice off`. Inline overrides: `voice=<name>`, `voice=<path>`, `voice=off`, `voice-skip`. The profile keeps only rewrite prefs plus an optional `default_voice` (null by default, so nothing is auto-applied).
+- Still a single rewrite pass. The profile and fingerprint apply as constraints on that pass, not as extra loops. The em-dash ban and the "never alter verbatim quotes, legal text, section numbers, or data" rule override everything else, including a voice's recorded punctuation habits (em-dashes are matched in rhythm but never reproduced).
 
 Details live in `references/voice-fingerprint.md`.
 
@@ -194,6 +194,7 @@ The skill also includes a final "obviously AI generated" audit pass and a second
 
 ## Version History
 
+- **2.9.0** - Multi-target voices: replaced the single global `voice.txt`/`voice-fingerprint.json` with a per-voice library under `$HOME/.humanizer/voices/<name>/`. A voice applies only when named (`voice=<name>`); no forced global voice. New subcommands (`list voices`, `add voice`, `set voice <name>=`, `show voice <name>`, `reset voice <name>`, `default voice`). Fingerprint schema adds `voice_name`; the hash now targets the resolved sample. Em-dash ban explicitly overrides any voice's recorded dash habit. One-time migration of a legacy global voice into `voices/<name>/`. No change to the 30 patterns.
 - **2.8.0** - Fork: added a saved preference profile (dialect, grade, tone, length) and a persistent voice fingerprint extracted once from a writing sample and reused across runs. Voice mechanism adapted from numen-tech/slopornot, reworked to Windows/PowerShell and a single pass. No change to the 30 patterns.
 - **2.7.0** - Added pattern #30 (diff-anchored writing); made em/en dashes a hard cut rather than "overuse"; expanded #21 to cover speculative gap-filling ("maintains a low profile"). 30 patterns total.
 - **2.6.0** - Cleanup pass: consolidated the duplicated workflow sections, gated the personality guidance to content where voice is wanted, removed the model-fingerprinting subsection, and condensed the worked example. No change to the 29 patterns.
