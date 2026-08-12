@@ -1,0 +1,78 @@
+# Secrets & credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+client_secret*.json
+service_account*.json
+*.token
+*_token.json
+.clasp.json
+tokens/
+secrets/
+*.vault
+*.keystore
+
+# API keys / cloud credentials
+*ollama*
+*openrouter*
+*dropbox*
+*gcloud*
+*aws*
+*azure*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# Google Apps Script
+.clasp.json
+.clasprc.json
+
+# Logs
+*.log
+logs/
+
+# Temp files
+*.tmp
+*.bak
+*.cache
