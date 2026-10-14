@@ -6,7 +6,7 @@ A portable agent skill that removes signs of AI-generated writing from text, mak
 
 ## Fork and attribution
 
-This is a fork of [blader/humanizer](https://github.com/blader/humanizer) (MIT, copyright 2025 Siqi Chen). The original skill and all 30 detection patterns are that project's work; full credit goes there.
+This is a fork of [blader/humanizer](https://github.com/blader/humanizer) (MIT, copyright 2025 Siqi Chen). The original skill and its core detection patterns are that project's work; full credit goes there.
 
 This fork adds a persistent preference profile and a one-time voice fingerprint so a writing sample is analyzed once and reused across runs. That mechanism is adapted from the `agentic-humanizer` skill in [numen-tech/slopornot](https://github.com/numen-tech/slopornot) (MIT, copyright 2025 Siqi Chen, copyright 2026 Thilak Rao). It is reworked to run as a single disciplined pass on Windows/PowerShell with no Slop or Not Pro scoring loop and no macOS dependency. See `NOTICE` for the attribution summary.
 
@@ -124,7 +124,7 @@ Rewrites follow a no-fabrication rule: they never add facts, names, dates, or ci
 
 > "LLMs use statistical algorithms to guess what should come next. The result tends toward the most statistically likely result that applies to the widest variety of cases."
 
-## 33 Patterns Detected (with Before/After Examples)
+## 38 Patterns Detected (with Before/After Examples)
 
 ### Content Patterns
 
@@ -167,6 +167,12 @@ Rewrites follow a no-fabrication rule: they never add facts, names, dates, or ci
 | 31 | **Manufactured punchlines / staccato drama** | "It had no preference. No prior. No nostalgia." | Use varied sentence lengths and concrete claims |
 | 32 | **Aphorism formulas** | "Symmetry is the language of trust" | Replace the formula with the actual claim |
 | 33 | **Conversational rhetorical openers** | "Honestly? It depends..." | Remove the fake-candid setup |
+| 34 | **Fabricated experience, statistics, citations** | "I run this pipeline; it catches 60 percent" | Mark UNVERIFIED; keep only if the user or a source confirms |
+| 35 | **Intensifier and sincerity adverbs** | "quietly reshaping", "genuinely useful" | Show the effect instead |
+| 36 | **Colon and question reveals** | "The fix? A single flag." | State it directly |
+| 37 | **Sentence-initial conjunction runs** | "And... But... So..." in a row | Keep one, merge the rest |
+| 38 | **Parenthetical density** | several asides per paragraph | Keep asides that add information |
+| 9b | **Copula-flip negation** | "The bottleneck is not compute. It is memory." | "Memory, not compute, limits it." |
 
 ### Communication Patterns
 
@@ -221,6 +227,7 @@ Rewrites follow a no-fabrication rule: they never add facts, names, dates, or ci
 
 ## Version History
 
+- **3.1.0 (fork)** - Made the em and en dash ban absolute again: a voice sample no longer re-enables dashes, because the owner's rule is absolute and his own fingerprint said never to reproduce them. Added tells 9b (copula-flip negation), 34 (fabricated experience, statistics and citations, which a v2 blog draft carried through a humanizer pass), 35-38. Added `scripts/tell_scan.py`, a deterministic per-tell counter with line numbers, after a run claimed zero hits on an article with four copula flips; the scan ledger is now required output, including in embedded mode. Added a claim map and an optional Jev check (`scripts/jev_check.py`) for meaning preservation and added claims. Missing voices now fail loudly instead of silently falling back. Moved profile and voice plumbing to `references/profile-and-voice.md`, fixed PowerShell commands that relied on variables from earlier shells, and dropped nonportable frontmatter keys.
 - **3.0.0 (fork)** - Merged upstream v2.9.1 into the fork (which had reused 2.8.0/2.9.0 for its own voice work, hence the major bump) and distilled writing-craft rules from [Anbeeld/WRITING.md](https://github.com/Anbeeld/WRITING.md) v1.4.1 into `references/writing-craft.md`: editing-integrity guards, do-not-perform rules, no-fabricated-messiness safeguards, cohesion/plain-words heuristics, and long-form diagnostics. Reconciled the em-dash rule with the voice fingerprint: an active voice whose sample genuinely uses em dashes now outranks the ban (upstream's stance), replacing the fork's earlier hard override.
 - **2.9.1 (upstream)** - Improved distribution and portability: removed nonportable frontmatter and tool preapprovals, made global installation the documented default, added package validation, and removed the duplicated long-form example from the runtime prompt. No change to the 33 patterns.
 - **2.9.0 (upstream)** - Added a no-fabrication rule: rewrites may not invent facts, names, dates, or citations not present in the source, and every example that modeled invented specifics was re-cut to use only source information (fixes #187). Replaced paragraph-count parity with an information-over-shape rule, made a user's voice sample outrank the em dash ban, and added invocation modes (pasted text / file / embedded). No change to the 33 patterns.
