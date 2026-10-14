@@ -1,6 +1,6 @@
 # Writing Craft Rules (distilled from Anbeeld/WRITING.md v1.4.1, MIT)
 
-Load this file when rewriting long-form or reader-facing prose (articles, docs, essays, emails, applications — anything a reader will actually see). It supplements the 33 patterns in SKILL.md with meaning-preservation guards and structural diagnostics. Everything here is a tripwire, not a target: scrutinize repeated fallback, not isolated use, and never invent material to force a change.
+Load this file when rewriting long-form or reader-facing prose (articles, docs, essays, emails, applications: anything a reader will actually see). It supplements the numbered patterns in SKILL.md with meaning-preservation guards and structural diagnostics. Everything here is a tripwire, not a target: scrutinize repeated fallback, not isolated use, and never invent material to force a change.
 
 ## Editing distortions (meaning-preservation guards)
 
@@ -58,6 +58,40 @@ Flag on repetition: `The catch?` / `The surprising part?`, `Whether you're X or 
 - Strip leaked machinery tokens: `turn0search0`, `oaicite`, `oai_citation`, `contentReference`.
 - Verify markup: heading hierarchy, list structure, tables, code fences, footnotes, links (prefer original sources over search intermediaries; never fabricate or "fix" authenticated URLs).
 - Leave code blocks, commands, datasets, and quotations unedited.
+
+## Register for expert and adjudicating readers
+
+Applies whenever the reader is a specialist acting on the text: agency records staff,
+FOIA/Privacy Act offices, adjudicators, raters, clinicians, opposing counsel, reviewers.
+Two failure modes, opposite directions, and the fix is not a midpoint between them.
+
+**Do not explain the reader's own domain back to them.** Cite the authority bare and stop.
+"I request amendment of the record under 5 U.S.C. 552a(d)(2)" is correct. Appending
+"which gives individuals the right to correct inaccurate federal records" is a lecture. The same error wears other hats: narrating their process back to them ("I
+understand that under X you will refer this to..."), or spelling out downstream
+consequences they administer daily. Omitting the citation is worse than including it, so
+cite; just never gloss it. Spend the words on facts they do not have instead: record
+numbers, block numbers, dates, dispositions. They know the law and have never seen the file.
+
+**Soften conclusions, keep requests crisp.** These are separable, and collapsing them is
+how a correction request degrades into asking a favor.
+- Conclusions and characterizations: own them as yours. "I do not believe the record
+  supports X" over "X is not supported by the record." Lead with the evidence and let the
+  conclusion follow rather than asserting it and then supporting it. Facts first, verdict
+  implied, is both humbler and more persuasive.
+- The actual asks: leave them flat, numbered, and unhedged. Do not soften "Remove the X
+  descriptor" into "if possible, it might be worth considering whether X could be removed."
+
+**Invite correction on the one point where you are least certain.** A single line such as
+"If I am misreading how that field is populated, I would appreciate knowing" removes any
+know-it-all reading, and it also closes the deflection: a technical constraint now has to
+be named rather than gestured at, and silence concedes the point. Humility and pressure in
+one sentence. Use it once, on the genuinely uncertain claim, not as a tic.
+
+**Keep precision that forecloses a dodge, even when it reads lawyerly.** Naming a manual's
+edition date or a specific code number costs a little warmth and buys a lot: it preempts
+"you are looking at an old version." Do not strip that kind of detail in the name of
+sounding humbler.
 
 ## Compound hyphenation
 

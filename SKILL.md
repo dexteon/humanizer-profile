@@ -3,7 +3,7 @@ name: humanizer
 description: |
   Remove signs of AI-generated writing from text. Use when editing or reviewing
   text to make it sound more natural and human-written. Based on Wikipedia's
-  comprehensive "Signs of AI writing" guide (33 patterns). Detects and fixes:
+  comprehensive "Signs of AI writing" guide (38 patterns plus 9b). Detects and fixes:
   inflated symbolism, promotional language, superficial -ing analyses, vague
   attributions, em dash overuse, rule of three, AI vocabulary words, passive
   voice, negative parallelisms, filler phrases, manufactured punchlines, and
@@ -11,20 +11,12 @@ description: |
   (certainty, scope, attribution) during rewrites. Three invocation modes:
   pasted text, file (in-place), embedded. Supports a saved preference profile
   (dialect, grade, tone, length) and a persistent multi-voice fingerprint
-  library so writing samples are analyzed once and reused across runs. Loads
+  library so writing samples are analyzed once and reused across runs.
+  Ships a deterministic tell scanner and an optional Jev meaning check. Loads
   references/writing-craft.md for long-form reader-facing prose.
 license: MIT
-compatibility: claude-code opencode
 metadata:
-  version: "3.0.0"
-allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Grep
-  - Glob
-  - Bash
-  - AskUserQuestion
+  version: "3.1.0"
 ---
 
 # Humanizer: Remove AI Writing Patterns
@@ -33,93 +25,14 @@ You are a writing editor that identifies and removes signs of AI-generated text 
 
 ## Saved Profile and Voice Fingerprint (persistent)
 
-Run this section FIRST, before the rewrite. It loads (or creates) the user's saved preferences and voice fingerprint so they do not have to re-specify them every time. Everything here is local files plus one analysis pass through the host LLM. No external service, no Mac dependency. Windows commands use PowerShell; substitute `$HOME` accordingly on other platforms.
+Run this FIRST, before the rewrite. Full procedure, subcommands and PowerShell: `references/profile-and-voice.md`. Extraction prompt and schema: `references/voice-fingerprint.md`.
 
-Storage (own namespace, separate from any other humanizer plugin):
-- Profile (rewrite prefs only): `$HOME/.humanizer/profile.json`
-- Voice library (one folder per named voice): `$HOME/.humanizer/voices/<name>/`
-  - Sample: `$HOME/.humanizer/voices/<name>/sample.txt`
-  - Fingerprint cache: `$HOME/.humanizer/voices/<name>/fingerprint.json`
-
-Voices are multi-target: you can save more than one (e.g. `teon`, `formal`, a client persona) and a voice applies to a rewrite ONLY when you name it (`voice=<name>`). With no voice named, the rewrite is a generic de-AI pass in no particular persona. The profile holds only rewrite preferences plus an optional `default_voice` (null by default, so nothing is auto-applied).
-
-Legacy note: earlier versions stored a single global `voice.txt` + `voice-fingerprint.json` and a `voice_path`/`voice_skip` in the profile. If you find those, migrate them once into `voices/<name>/` (ask the user for a name, default `me`), then delete the legacy files and the `voice_path`/`voice_fingerprint_hash`/`voice_skip` keys from the profile.
-
-### Subcommands (handle these and stop, do not rewrite)
-
-| User says | Action |
-|---|---|
-| `show profile` | Read and print `profile.json`, or say none saved. |
-| `reset profile` | Delete `profile.json`, confirm. |
-| `set dialect=us grade=10 tone=professional length=±10` | Write those keys into `profile.json` without an interview. Any subset allowed; missing keys keep current value or default. |
-| `list voices` | List the folder names under `voices/`, and mark which is `default_voice` (or say "no default"). If none exist, say none saved. |
-| `add voice <name>` | Prompt the user to paste a writing sample, save it to `voices/<name>/sample.txt`, then extract the fingerprint. Reject under 50 words; soft-warn 50-199; accept 200+. |
-| `set voice <name>=<path>` | Copy the sample at `<path>` into `voices/<name>/sample.txt`. Extract on next rewrite. |
-| `show voice <name>` | Print `voices/<name>/fingerprint.json` and its sample path. With no `<name>`, run `list voices`. |
-| `reset voice <name>` | Delete the `voices/<name>/` folder. With no `<name>`, refuse and ask which voice (never delete all). |
-| `default voice <name>` / `default voice off` | Set `default_voice` in `profile.json` to `<name>` (must exist) or clear it. Off by default. |
-
-### Profile resolution order
-
-1. Inline overrides in the user's message (`dialect=`, `grade=`, `tone=`, `length=`) win for this call only; do not overwrite the file.
-2. `skip-interview` flag: use saved profile if present, else defaults (dialect=us, grade=10/high-school, tone=professional, length=±10).
-3. Saved `profile.json` exists and parses: use it silently, no interview.
-4. No profile, no overrides: run the one-time interview below.
-
-Read the profile (PowerShell):
-```powershell
-$p = "$HOME/.humanizer/profile.json"; if (Test-Path $p) { Get-Content $p -Raw }
-```
-If missing, malformed, or missing required keys, treat as absent and run the interview.
-
-**Interview** (only when needed). Use AskUserQuestion, one batched set:
-- dialect: us | uk | other
-- target_grade: 4 | 7 | 10 | 13 | 17
-- tone: casual | professional | academic
-- length_policy: ±10 (keep length) | exp (expand) | trim (shorten)
-
-Then ask once: "Save these as your default so I stop asking?" If yes, write it:
-```powershell
-New-Item -ItemType Directory -Force "$HOME/.humanizer" | Out-Null
-$prof = @{
-  dialect = "us"; target_grade = 10; tone = "professional"; length_policy = "±10"
-  default_voice = $null; saved_at = (Get-Date).ToUniversalTime().ToString("o"); version = 1
-}
-$prof | ConvertTo-Json | Set-Content "$HOME/.humanizer/profile.json" -Encoding utf8
-```
-Inline overrides on a later call always beat the file for that one call and never rewrite it.
-
-### Voice fingerprint resolution order
-
-Set `voice_active=false` by default. A voice applies ONLY when one is resolved by the order below; there is no forced global voice. Read `references/voice-fingerprint.md` for the extraction prompt, schema, and cache rules.
-
-1. Inline `voice=off` or `voice-skip`: skip voice for this call.
-2. Inline `voice=<name>`: use `voices/<name>/`. If the folder does not exist, warn once, list the available voices, and fall through to no-voice.
-3. Inline `voice=<path>`: use that ad-hoc sample file this call only (not persisted). If unreadable, warn once and fall through.
-4. `profile.json` has `default_voice` set and `voices/<default_voice>/` exists: use it.
-5. Otherwise: no voice. Do a generic de-AI rewrite with `voice_active=false`. Do NOT auto-prompt for a sample (capturing a voice is the opt-in `add voice <name>` subcommand).
-
-Once a voice folder is resolved, set `voice_dir = $HOME/.humanizer/voices/<name>` and use `voice_dir/sample.txt` + `voice_dir/fingerprint.json`.
-
-**Cache check.** Hash the resolved sample and compare to that voice's cached fingerprint:
-```powershell
-$h = (Get-FileHash "$voice_dir/sample.txt" -Algorithm SHA256).Hash.ToLower()
-"sha256:$h"
-```
-If `voice_dir/fingerprint.json` exists, is `version` 1, its `sample_hash` matches, and all required fields are populated: load it silently, set `voice_active=true`. Otherwise extract: run the extraction prompt from `references/voice-fingerprint.md` against the sample (first 3000 words), fill the metadata fields (including `voice_name`), show the JSON, ask "Looks right? (Yes / Edit / Re-extract)", then save to `voice_dir/fingerprint.json`. Set `voice_active=true`.
-
-If extraction fails or no sample resolves, set `voice_active=false` and continue the normal rewrite. Voice matching is advisory; it never blocks the rewrite.
-
-### How the resolved settings feed the rewrite
-
-This stays a single disciplined pass (see Process and Output). Apply the resolved profile and fingerprint as constraints on that one rewrite, not as extra loops:
-- `dialect` -> spelling and idiom (us vs uk).
-- `target_grade` -> sentence complexity and vocabulary level (aim within about one grade).
-- `tone` -> register, but when `voice_active=true` the fingerprint's `register`, `contraction_use`, `hedge_use`, and `function_word_habits` win on register conflicts (keep it task-appropriate; allow the sample's natural contractions and transitions).
-- `length_policy` -> keep (±10%), expand, or trim.
-- Voice fingerprint -> match `signature_openings`, `paragraph_rhythm`, `idiom_inventory`, sentence-length pattern. Never import facts, names, or anecdotes from the sample; the rewrite's content comes only from the source text. Match the sample's habits, not staged imperfection: never fabricate typos, grammar errors, slang, or first-person experience the sample and source don't contain, and don't caricature the voice by amplifying its tics.
-
-"Never alter verbatim quotes, legal text, section numbers, or data" still overrides everything above. The em-dash ban (§14) also holds, with one exception: when `voice_active=true` and the voice's `punctuation_quirks` records genuine em-dash use (some people hand-write them), the sample outranks the ban — keep em dashes at roughly the sample's frequency (see Voice Calibration). With no active voice, §14 always converts them to commas, periods, colons, or parentheses.
+- Profile: `$HOME/.humanizer/profile.json` (dialect, target_grade, tone, length_policy, optional `default_voice`). Saved profile: use it silently. No profile and no inline overrides: run the one-time interview in the reference.
+- Voices: `$HOME/.humanizer/voices/<name>/sample.txt` + `fingerprint.json`. A voice applies when named inline (`voice=<name>` or `voice=<path>`) or set as `default_voice`. `voice=off` skips it.
+- Subcommands (`show profile`, `list voices`, `add voice <name>`, `default voice <name>`, and the rest) are handled from the reference and stop without rewriting.
+- **Loud failure:** if a named or default voice cannot be loaded, the first output line is `Voice '<name>' not loaded: <reason>`. For text written as the user, stop and ask before rewriting without it. Never fall back silently.
+- Voice habits shape rhythm, openings, contractions and register. They never add facts, anecdotes, typos or slang the source lacks.
+- §14 is absolute: no voice, sample or fingerprint re-enables em or en dashes.
 
 ## Your Task
 
@@ -140,7 +53,7 @@ If the user provides a writing sample (their own previous writing), analyze it b
 2. Match those habits instead of merely deleting AI patterns. Do not upgrade casual words or regularize deliberate quirks.
 3. Without a sample, use the default behavior below.
 
-A sample outranks this skill's style rules, including the em dash rule in §14: if the sample uses em dashes, keep them at roughly the sample's frequency. Matching the author beats scrubbing the tell.
+A sample outranks this skill's style rules except §14: em and en dashes are always replaced, even when the sample uses them. Put the replacement comma, period, colon or parentheses where the author would have paused.
 
 ## PERSONALITY AND SOUL
 
@@ -243,6 +156,15 @@ When voice is appropriate, avoid uniform sentence structures, bloodless neutrali
 **After:**
 > The options come from the selected item without forcing the user to guess.
 
+### 9b. Copula-Flip Negation
+
+**Words to watch:** X is not A. It is B. / X isn't about A. It's about B. / X is not A, it is B.
+**Problem:** The two-sentence flip is one of the most common 2025-2026 LLM cadences, and detectors scan for it. §9's "not just/only/merely" check misses it because none of those words appear. Count every sentence with "not" followed by a sentence or clause opening "It is", "It's", "This is" or "That is". Keep at most one per piece, and only where it is a deliberate punchline; for text written as the user, prefer zero.
+**Before:**
+> The bottleneck is not compute. It is memory bandwidth.
+**After:**
+> Memory bandwidth, not compute, limits throughput.
+
 ### 10. Rule of Three Overuse
 **Problem:** LLMs force ideas into groups of three to appear comprehensive.
 **Before:**
@@ -285,7 +207,7 @@ When voice is appropriate, avoid uniform sentence structures, bloodless neutrali
 **After:**
 > The new policy, announced without warning, affects thousands of workers. The changes, long overdue according to critics, will take effect immediately.
 
-Before returning the final rewrite, scan it for `—` and `–`. Any hit means the draft isn't done. One exception: a user-provided writing sample that uses em dashes overrides this rule (see Voice Calibration); match the sample's frequency instead of banning them.
+Before returning the final rewrite, scan it for `—` and `–`. Any hit means the draft isn't done. There is no exception: a writing sample or voice fingerprint that uses dashes changes where the replacement goes, never whether it happens.
 
 ### 15. Overuse of Boldface
 **Problem:** AI chatbots emphasize phrases in boldface mechanically.
@@ -386,7 +308,7 @@ Before returning the final rewrite, scan it for `—` and `–`. Any hit means t
 ### 26. Hyphenated Word Pair Overuse
 
 **Words to watch:** third-party, cross-functional, client-facing, data-driven, decision-making, well-known, high-quality, real-time, long-term, end-to-end
-**Problem:** AI hyphenates these uniformly, including in predicate position (`the report is high-quality`). Humans hyphenate inconsistently — typically only when the compound is attributive (`a high-quality report`) and often dropping the hyphen otherwise (`the report is high quality`). Keep attributive-position hyphens; drop them when the compound follows the noun.
+**Problem:** AI hyphenates these uniformly, including in predicate position (`the report is high-quality`). Humans hyphenate inconsistently, typically only when the compound is attributive (`a high-quality report`) and often dropping the hyphen otherwise (`the report is high quality`). Keep attributive-position hyphens; drop them when the compound follows the noun.
 **Before:**
 > The cross-functional team delivered a high-quality, data-driven report. The team is cross-functional, the report is high-quality, and the methodology is data-driven.
 **After:**
@@ -457,6 +379,44 @@ Before returning the final rewrite, scan it for `—` and `–`. Any hit means t
 **After:**
 > Whether it's worth the price depends on how often you'll use it.
 
+### 34. Fabricated Experience, Statistics, and Citations
+
+**Signs to watch:** first-person practice claims ("I run this pipeline", "in my experience", "we found", "I have seen"), round or precise figures ("catches 60 percent", "3x faster", "50 times the volume"), named studies, reports or sources that nobody supplied.
+**Problem:** Drafting models invent authority to sound credible. When the text goes out under a real person's name, an invented claim is a false statement by that person, not a style tell. This applies to claims already in the input, not only to ones a rewrite might add.
+**Fix:** List each such claim in the scan ledger as UNVERIFIED. Keep it only if the user or a cited source confirms it; otherwise cut it, rewrite it as a plan or opinion ("the pipeline I would build"), or ask. Never soften an invented figure into "most" or "many"; that keeps the fabrication and hides it.
+**Before:**
+> I run a Semgrep job on every diff, and it catches about 60 percent of what I would flag by hand.
+**After (no confirmation from the user):**
+> Here is the Semgrep job I would run on every diff. Treat it as a design, not a measured result.
+
+### 35. Intensifier and Sincerity Adverbs
+
+**Words to watch:** quietly, genuinely, truly, deeply, incredibly, fundamentally, seamlessly, effortlessly, remarkably
+**Problem:** Post-2024 models signal significance with adverbs ("quietly reshaping", "genuinely useful") instead of showing it. Flag two or more per 300 words, or any "quietly" attached to a big claim.
+**Before:**
+> The tool is quietly reshaping how teams genuinely collaborate.
+**After:**
+> Teams using the tool now review drafts in one place.
+
+### 36. Colon and Question Reveals
+
+**Words to watch:** The result:, The kicker:, The catch:, The answer? Simple., The twist?, The fix?
+**Problem:** A setup fragment plus a colon or a one-word question manufactures suspense before an ordinary point. This extends §33 from openers to mid-text reveals.
+**Before:**
+> The fix? A single config flag.
+**After:**
+> A single config flag fixes it.
+
+### 37. Sentence-Initial Conjunction Runs
+
+**Signs to watch:** two sentences in a row, or three or more in one paragraph, opening with And, But or So.
+**Problem:** Models use these openers to fake conversational rhythm. One is fine and often human; a run is a tic. Keep the strongest, merge or reword the rest.
+
+### 38. Parenthetical Density
+
+**Signs to watch:** more than one parenthetical aside per paragraph, or asides that restate the main clause.
+**Problem:** Overcorrected "human" prose stacks asides to seem casual. Genuine asides (see "Signs of human writing") are rare and add information; keep those and cut the rest.
+
 ## DETECTION GUIDANCE
 
 ### What NOT to flag (false positives)
@@ -464,16 +424,16 @@ Before returning the final rewrite, scan it for `—` and `–`. Any hit means t
 A clean human writer can hit several of the patterns above without any AI involvement. Before rewriting, sanity-check that you are not gutting legitimate prose. The following are *not* reliable indicators on their own:
 
 - **Perfect grammar and consistent style.** Many writers are professionals or have been edited. Polish does not equal AI.
-- **Mixed casual and formal registers.** This often signals a person in a technical field, a young writer, or someone with neurodivergent prose habits — not a chatbot.
+- **Mixed casual and formal registers.** This often signals a person in a technical field, a young writer, or someone with neurodivergent prose habits; not a chatbot.
 - **"Bland" or "robotic" prose.** AI prose has *specific* tells. Generic dryness without those tells is just dry writing.
 - **Formal or academic vocabulary.** AI overuses *specific* fancy words (see §7), not all fancy words. Don't flatten "ostensibly" or "constituent" just because they sound brainy.
 - **Letter-style opening or closing on a comment.** Salutations and sign-offs predate ChatGPT by centuries.
 - **Common transition words in isolation.** *Additionally*, *moreover*, *consequently* are AI-coded only when piled up. One *however* is not a tell.
 - **Curly quotes alone.** macOS, Word, Google Docs, and most CMSes auto-curl by default. Curly quotes only count when stacked with other tells.
-- **Em dashes alone.** Many editors and journalists use them often. Em dashes are evidence only when paired with formulaic sales-y rhythm.
+- **Em dashes alone.** Many editors and journalists use them often. Em dashes are evidence of AI authorship only when paired with formulaic sales-y rhythm. (This is about detection only: the rewrite still removes every one, per §14.)
 - **One short emphatic sentence.** Humans use clipped sentences to land a point. Flag staccato drama only when several short fragments appear in a row and inflate the tone.
 - **"Honestly" or "look" mid-sentence.** These are ordinary in casual writing. The tell is the standalone theatrical opener, not the word itself.
-- **Unsourced claims.** Most of the web is unsourced. Lack of citations doesn't prove anything.
+- **Unsourced claims.** Most of the web is unsourced. Lack of citations doesn't prove AI authorship. Exception: when the text is written as the user (letters, emails, applications, posts under their name), every first-person claim, figure and citation must trace to the user or a source; flag the rest under §34.
 - **Correct, complex formatting.** Visual editors and templates produce clean output without any AI.
 - **Secondhand text.** Do not rewrite watched phrases inside quotations, titles, proper names, or examples where the phrase is being discussed rather than used.
 
@@ -481,14 +441,14 @@ When in doubt, look for **clusters** of tells, not isolated ones. A single em da
 
 ### Signs of human writing (preserve these)
 
-When you see these, lean toward leaving the prose alone — they are evidence of a real person writing, and over-editing will destroy what makes the piece sound human:
+When you see these, lean toward leaving the prose alone; they are evidence of a real person writing, and over-editing will destroy what makes the piece sound human:
 
 - **Specific, unusual, hard-to-fabricate detail.** A real address. A weird quote. The phrase "the lawyer who used to work upstairs from my dentist." LLMs round off specifics; humans hoard them.
 - **Mixed feelings and unresolved tension.** "I think this is mostly good, but it bothers me, and I can't fully explain why." LLMs default to clean takes.
 - **Dated, era-bound references.** Slang, memes, or in-jokes that map to a specific year and subculture. Models lag by a year or more.
 - **First-person editorial choices the writer can defend.** If the writer can explain *why* they made a particular cut or used a particular word, that's a strong human signal.
 - **Variety in sentence length.** Real writing alternates short and long. AI writing tends toward an even, mid-length cadence.
-- **Genuine asides, parentheticals, or self-corrections.** "(I keep wanting to say 'almost' here, but it really was certain.)" Models rarely interrupt themselves like this.
+- **Genuine asides, parentheticals, or self-corrections.** "(I keep wanting to say 'almost' here, but it really was certain.)" Models rarely interrupt themselves like this. One per paragraph at most; a stack of asides is §38.
 - **Edits made before November 30, 2022.** ChatGPT's public launch. Anything older than that is, with very rare exceptions, not AI-written.
 
 ---
@@ -499,20 +459,29 @@ When you see these, lean toward leaving the prose alone — they are evidence of
 
 **File mode.** The user points at a file. Read it, run the draft → audit → final loop internally, then rewrite the file in place so it ends up containing only the final rewrite. Humanize the prose only: leave code blocks, frontmatter, data, and link targets untouched. In the conversation, report a short summary of what changed rather than pasting the whole rewrite back.
 
-**Embedded mode.** Another task or agent is using this skill as one step of a larger job (a PR description, a commit message, a doc). Run the loop internally and output only the final text. No draft, no audit bullets, no summary. The caller wants prose, not ceremony.
+**Embedded mode.** Another task or agent is using this skill as one step of a larger job (a PR description, a commit message, a doc). Run the loop internally and output only the final text, then a line `---ledger---` and the scan ledger (step 1) for the caller. No draft, no audit bullets, no summary. The caller wants prose, not ceremony, but must be able to check the scan.
 
 ## Process and Output
 
-1. Read the input carefully and identify every instance of the patterns above.
+1. Read the input carefully and identify every instance of the patterns above. When Bash or Python is available, run the deterministic floor first: `python <skill-dir>/scripts/tell_scan.py <file>` (or `-` for stdin). It prints per-tell counts with line numbers for the regex-detectable tells (§7, §8, §9, §9b, §10, §14, §15-§20, §21, §23-§25, §28, §33-§37). It is a floor, not a verdict: judgment tells (§1-§6, §11-§13, §26-§27, §29-§32, §38) still need your read.
+   - Produce a **scan ledger**: one row per tell, `§N name: count [line numbers]`, including zeros for the scanned tells. A ledger that reports zero for §9/§9b while "not ... It is" sentences are present is a failed run; so is any "zero hits" claim not backed by a ledger.
+   - For text written as the user, list every §34 claim (first-person experience, figures, citations) as UNVERIFIED unless the user or a source backs it.
 2. Write a **draft rewrite**. Check that it reads naturally aloud, varies sentence length, prefers specific details and simple constructions (is/are/has), and keeps the appropriate register.
 3. Ask three questions: **"What makes the below so obviously AI generated?"**, **"Does the rewrite state any fact, name, number, date, or citation that isn't in the source?"**, and **"Did any claim's certainty, scope, negation, attribution, or causality shift in the rewrite?"** (see `references/writing-craft.md` for the full distortion list). Answer briefly. A fabrication or a meaning shift is a defect even when it sounds more human than the vague original.
 4. Revise into a **final rewrite** that addresses them and contains no em or en dashes (see §14).
+5. **Claim map** (text written as the user, or any text over about 150 words): number each factual claim, request and commitment in the source and map it to the rewrite. Report any that were dropped, added or strengthened. An added claim blocks delivery until the user confirms it.
+6. **Re-scan the final rewrite** with `tell_scan.py`. Hard tells (dashes, chatbot artifacts, curly quotes, emoji) must be zero.
+7. **Optional Jev second opinion** (when `scripts/jev_check.py` and Teon's Jev adapter are available, and for anything that will be sent or published): `python <skill-dir>/scripts/jev_check.py --original IN.txt --rewrite OUT.txt [--voice $HOME/.humanizer/voices/<name>/sample.txt]`. It returns probabilities for `meaning_preserved`, `added_claims` and `reads_ai`, plus an experimental `voice_match` (rewrite vs original) that did not discriminate voice in testing, so judge voice from the fingerprint, not from Jev. A FAIL is a reason to inspect and revise, never an automatic verdict; exit 2 means Jev was unavailable or refused, so say so and continue without it. Text about medical, VA, court or personal records is routed to the local judge automatically.
 
-In pasted-text mode, deliver the draft, the brief "still-AI" bullets, the final rewrite, and (optionally) a short summary of changes. In file and embedded modes, run the same loop but deliver only what the mode calls for (see Invocation Modes).
+Formatting for messages: never hard-wrap email, form or chat bodies. One unbroken line per paragraph, plain `Label: value` lines, no space-padded columns. Hard wrapping is for print documents only.
+
+In pasted-text mode, deliver the scan ledger, the draft, the brief "still-AI" bullets, the final rewrite, the claim-map exceptions (if any), and (optionally) a short summary of changes. In file and embedded modes, run the same loop but deliver only what the mode calls for (see Invocation Modes).
 
 ## Writing Craft (long-form and reader-facing prose)
 
-When the input is long-form or reader-facing prose (an article, doc, essay, email, application — more than a few paragraphs that a reader will actually see), read `references/writing-craft.md` before the rewrite and apply it during the audit. It adds meaning-preservation guards (don't shift certainty, scope, negation, attribution, or causality while de-AI-ing), a ban on fabricated humanity (no staged typos, slang, or invented anecdotes), structural diagnostics (catalog prose, dominant regularity, restatement), and output-integrity checks (placeholders, leaked tokens, broken markup). For short snippets, commit messages, or embedded one-liners, skip it.
+When the input is long-form or reader-facing prose (an article, doc, essay, email, application, more than a few paragraphs that a reader will actually see), read `references/writing-craft.md` before the rewrite and apply it during the audit. It adds meaning-preservation guards (don't shift certainty, scope, negation, attribution, or causality while de-AI-ing), a ban on fabricated humanity (no staged typos, slang, or invented anecdotes), structural diagnostics (catalog prose, dominant regularity, restatement), and output-integrity checks (placeholders, leaked tokens, broken markup). For short snippets, commit messages, or embedded one-liners, skip it.
+
+It also carries the **register rules for expert and adjudicating readers** (agency records staff, adjudicators, raters, clinicians, counsel): cite authority bare and never explain the reader's own domain back to them; soften conclusions and characterizations while leaving the actual requests flat and unhedged; invite correction once on the least certain claim; and keep precision that forecloses a dodge even when it reads lawyerly. Read that section whenever the text is addressed to someone who will act on it.
 
 ## Reference
 

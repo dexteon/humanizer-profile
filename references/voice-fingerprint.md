@@ -6,7 +6,7 @@ Voice matching runs entirely through the host LLM and local files. No external s
 
 ## Storage
 
-Voices are multi-target: one folder per named voice under `$HOME/.humanizer/voices/`. A voice applies to a rewrite only when named (`voice=<name>`); there is no forced global voice.
+Voices are multi-target: one folder per named voice under `$HOME/.humanizer/voices/`. A voice applies when named inline (`voice=<name>`) or set as `default_voice` in the profile. See `references/profile-and-voice.md` for resolution and the loud-failure rule.
 
 - Sample: `$HOME/.humanizer/voices/<name>/sample.txt` (or an inline `voice=<path>` ad-hoc override)
 - Fingerprint cache: `$HOME/.humanizer/voices/<name>/fingerprint.json`
@@ -45,11 +45,10 @@ the orchestrator fills these in.
 - Keep every string short enough to reuse in a prompt.
 - If a trait is not visible, write "not enough evidence" for that field.
 - Every field under `fingerprint` is required. Do not omit fields.
-- Record punctuation habits truthfully, including em-dash or en-dash use. A
-  genuine dash habit in the sample outranks the §14 ban (see Voice Calibration
-  in SKILL.md): the rewrite may keep dashes at roughly the sample's frequency.
-  Note the observed frequency in `punctuation_quirks` so the rewrite matches it
-  instead of scattering dashes freely.
+- Record punctuation habits truthfully, including em-dash or en-dash use.
+  The §14 ban is absolute: a dash habit never re-enables dashes in the
+  rewrite. Record where the author uses them so the rewrite puts the
+  replacement comma, period, colon or parentheses at the same pauses.
 </constraints>
 
 <fields_to_watch>
@@ -101,15 +100,16 @@ After the LLM returns, set the metadata fields yourself:
 6. `extracted_at` = current UTC time in ISO 8601.
 7. `extracted_by` = `<harness>:<model-id-or-unknown>`.
 
-Hash on Windows (PowerShell) — hash the resolved sample, not a fixed path:
+Hash on Windows (PowerShell). Each call is a fresh shell, so set the path in the same command:
 ```powershell
-$h = (Get-FileHash "$voice_dir/sample.txt" -Algorithm SHA256).Hash.ToLower()
-"sha256:$h"
+$name = "teon"; $d = "$HOME/.humanizer/voices/$name"
+"sha256:" + (Get-FileHash "$d/sample.txt" -Algorithm SHA256).Hash.ToLower()
 ```
 
 Then show the populated JSON and ask "Looks right? (Yes / Edit / Re-extract)". On Yes, write it:
 ```powershell
-$json | Set-Content "$voice_dir/fingerprint.json" -Encoding utf8
+# $json holds the approved JSON text; WriteAllText avoids the PowerShell 5.1 byte-order mark
+[IO.File]::WriteAllText("$HOME/.humanizer/voices/$name/fingerprint.json", $json)
 ```
 On Edit, let the user correct fields but keep the schema; refuse to save if a required field is dropped. On Re-extract, ask what to change and rerun.
 
