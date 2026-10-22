@@ -23,8 +23,9 @@ Exit: 0 all clear, 1 a check failed its threshold, 2 Jev unavailable or refused
 (the rewrite proceeds without Jev; say so). Advisory only: a verdict never
 blocks or ships anything on its own.
 
-Adapter path: $HUMANIZER_JEV_ADAPTER, else D:/DexProjects/claude-config/scripts.
-Text containing personal-record markers (medical, VA, court, i-love-me) is
+Adapter path: the folder holding jev_adapter.py, from $HUMANIZER_JEV_ADAPTER. Without it the
+check reports UNAVAILABLE and the rewrite proceeds without Jev.
+Text containing personal-record markers (medical, legal, financial) is
 refused for live calls by the adapter; this script then retries once with
 privacy class "sensitive", which runs on the local judge.
 """
@@ -37,7 +38,7 @@ import os
 import sys
 from pathlib import Path
 
-ADAPTER_DIR = os.environ.get("HUMANIZER_JEV_ADAPTER", "D:/DexProjects/claude-config/scripts")
+ADAPTER_DIR = os.environ.get("HUMANIZER_JEV_ADAPTER", "")
 VOICE_WORDS = 450  # excerpt size; keeps state well under the adapter's token cap
 TEXT_WORDS = 1800
 
@@ -66,6 +67,8 @@ def clip(text: str, n: int) -> str:
 
 
 def run(original: str, rewrite: str, voice: str | None, privacy: str) -> dict:
+    if not ADAPTER_DIR:
+        return {"outcome": "UNAVAILABLE", "reason": "HUMANIZER_JEV_ADAPTER is not set"}
     sys.path.insert(0, ADAPTER_DIR)
     try:
         import jev_adapter  # type: ignore
