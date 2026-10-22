@@ -1,6 +1,6 @@
 # Humanizer (voiceprint fork)
 
-[![skills.sh installs](https://skills.sh/b/blader/humanizer)](https://skills.sh/blader/humanizer)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 A portable agent skill that removes signs of AI-generated writing from text, making it sound more natural and human. It is plain Markdown, so it can run in any harness that supports skill-style instructions.
 
@@ -25,7 +25,7 @@ Details live in `references/voice-fingerprint.md`.
 Install globally with the cross-agent skills CLI so Humanizer is available in every project:
 
 ```bash
-npx skills add blader/humanizer --global
+npx skills add dexteon/humanizer-profile --global
 ```
 
 Update an existing install:
@@ -37,13 +37,13 @@ npx skills update humanizer --global
 To install globally into every supported agent harness:
 
 ```bash
-npx skills add blader/humanizer --global --agent '*'
+npx skills add dexteon/humanizer-profile --global --agent '*'
 ```
 
 To target one configured harness, pass its agent name:
 
 ```bash
-npx skills add blader/humanizer --global --agent <agent-name>
+npx skills add dexteon/humanizer-profile --global --agent <agent-name>
 ```
 
 Omit `--global` for a project-local install that can be committed and shared with collaborators. Start a new agent session or reload skills after installation.
@@ -53,8 +53,8 @@ Omit `--global` for a project-local install that can be committed and shared wit
 Claude Code users can also install Humanizer as a plugin:
 
 ```
-/plugin marketplace add blader/humanizer
-/plugin install humanizer@humanizer
+/plugin marketplace add dexteon/humanizer-profile
+/plugin install humanizer@humanizer-profile
 ```
 
 The skill is then invoked as `/humanizer:humanizer`.
@@ -66,7 +66,7 @@ Any agent harness can use the skill directly because the runtime artifact is `SK
 For example:
 
 ```bash
-git clone https://github.com/blader/humanizer.git /path/to/your/skills/humanizer
+git clone https://github.com/dexteon/humanizer-profile.git /path/to/your/skills/humanizer
 ```
 
 Or, if you already have this repo cloned:

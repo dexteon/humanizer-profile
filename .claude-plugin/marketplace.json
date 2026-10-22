@@ -1,11 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace-manifest.json",
-  "name": "humanizer",
+  "name": "humanizer-profile",
   "owner": {
-    "name": "blader",
-    "url": "https://github.com/blader"
+    "name": "Teon Moore (dexteon)",
+    "url": "https://cyberautomations.com"
   },
-  "description": "The humanizer skill, installable as a Claude Code plugin.",
+  "description": "Humanizer with saved profiles and voice fingerprints, installable as a Claude Code plugin. Fork of blader/humanizer.",
   "plugins": [
     {
       "name": "humanizer",
