@@ -252,3 +252,8 @@ Rewrites follow a no-fabrication rule: they never add facts, names, dates, or ci
 ## License
 
 MIT. See `LICENSE` (copyright 2025 Siqi Chen, from the upstream blader/humanizer project) and `NOTICE` for the attributions covering the adapted voice-fingerprint mechanism from numen-tech/slopornot and the writing-craft rules distilled from [Anbeeld/WRITING.md](https://github.com/Anbeeld/WRITING.md).
+
+
+<!-- ca-tracked-link -->
+---
+Built by [CyberAutomations](https://cyberautomations.com/?utm_source=github&utm_medium=readme&utm_campaign=humanizer-profile). Need something like this built for your business? Start there.
