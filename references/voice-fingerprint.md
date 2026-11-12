@@ -10,6 +10,7 @@ Voices are multi-target: one folder per named voice under `$HOME/.humanizer/voic
 
 - Sample: `$HOME/.humanizer/voices/<name>/sample.txt` (or an inline `voice=<path>` ad-hoc override)
 - Fingerprint cache: `$HOME/.humanizer/voices/<name>/fingerprint.json`
+- Optional: `exemplars.txt` (rhythm passages) and `allow.json` (scanner allowlist), both described below. Neither is part of the cache key.
 
 Below, `<voice_dir>` means `$HOME/.humanizer/voices/<name>` for the resolved voice.
 
@@ -141,6 +142,36 @@ The rewrite in `SKILL.md` is one pass, not a loop. Apply the fingerprint as cons
 - `do_list` / `dont_list`: honor directly.
 
 Never import facts, names, or anecdotes from the sample. The rewrite's content comes only from the source text being humanized. Never fabricate humanity either: no staged typos, grammar errors, slang, or invented first-person experience, and no caricature of the voice by amplifying its tics (see `references/writing-craft.md`). The "do not alter verbatim quotes, legal text, section numbers, or data" rule overrides everything here. The em-dash ban (§14) also holds unless the sample genuinely uses dashes, in which case match the sample's frequency.
+
+## Exemplars (rhythm only)
+
+A fingerprint describes a voice in words; two or three real passages show it. Exemplars are 2 to 3 verbatim passages from the voice sample, 40 to 120 words each, stored in `<voice_dir>/exemplars.txt` separated by a line containing only `---`. If the file is missing, pick them from `sample.txt` at rewrite time.
+
+Rules for choosing and using them:
+
+- **Off-topic.** Pick passages whose subject differs from the text being rewritten. A topic-matched exemplar pulls its content and phrasing into the rewrite and hurts the result.
+- **Clean.** Skip passages with names, figures, dates or private facts, and passages that contain dashes (§14 still applies; a passage with a dash is not usable verbatim).
+- **Varied.** Prefer one short-sentence passage, one long-sentence passage and, if the sample has it, one opening or closing.
+- **Rhythm only.** Give them to the rewrite with this instruction: "These passages show how this author paces sentences, opens and closes, and punctuates. Match the rhythm. Do not reuse their words, subjects, claims or imagery." Content comes only from the text being rewritten.
+- **Never a source of facts.** Nothing in an exemplar may appear in the output.
+
+## Per-voice allowlist (`allow.json`)
+
+Some habits that the scanner flags are simply how this author writes. `<voice_dir>/allow.json` lists the advisory tell ids the scanner should not flag for this voice:
+
+```json
+{
+  "version": 1,
+  "allow": ["31", "37", "38"],
+  "notes": {"31": "short fragments are habitual", "37": "opens sentences with And or But", "38": "uses parentheses"}
+}
+```
+
+- Typical ids: `31` (runs of short fragments), `37` (And, But or So openers), `38` (parenthetical asides), `10` (lists of three), `23` (a favourite filler).
+- Add an id only when the sample shows the habit several times. Do not allowlist a tell because it is hard to remove.
+- Hard tells (§14 dashes, §18 emoji, §19 curly quotes, §20 chatbot artifacts, §21 cutoff disclaimers) can never be allowlisted; the scanner ignores them in the file and says so.
+- Pass it to the scanner with `tell_scan.py FILE --voice-dir <voice_dir>`. A missing `allow.json` means nothing is allowed. It is optional and is not part of the fingerprint schema, so it never invalidates the cache.
+- Propose the allowlist when the fingerprint is first extracted (from `punctuation_quirks`, `signature_openings` and `paragraph_rhythm`) and let the user edit it.
 
 ## Failure modes
 

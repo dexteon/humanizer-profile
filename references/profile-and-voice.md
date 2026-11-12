@@ -9,6 +9,8 @@ Own namespace, separate from any other humanizer plugin:
 - Voice library (one folder per named voice): `$HOME/.humanizer/voices/<name>/`
   - Sample: `$HOME/.humanizer/voices/<name>/sample.txt`
   - Fingerprint cache: `$HOME/.humanizer/voices/<name>/fingerprint.json`
+  - Optional exemplars: `$HOME/.humanizer/voices/<name>/exemplars.txt` (2 to 3 verbatim passages, `---` between them)
+  - Optional scanner allowlist: `$HOME/.humanizer/voices/<name>/allow.json`
 
 Voices are multi-target: you can save more than one (e.g. `casual`, `formal-alt`, a client persona). A voice applies when it is named inline (`voice=<name>`) or set as `default_voice` in the profile. With neither, the rewrite is a generic de-AI pass in no particular persona.
 
@@ -85,6 +87,8 @@ This stays a single disciplined pass. Apply the resolved profile and fingerprint
 - `target_grade`: sentence complexity and vocabulary level (aim within about one grade).
 - `tone`: register, but when `voice_active=true` the fingerprint's `register`, `contraction_use`, `hedge_use`, and `function_word_habits` win on register conflicts (keep it task-appropriate).
 - `length_policy`: keep (±10%), expand, or trim.
+- Exemplars: when the voice has `exemplars.txt` (or the sample is long enough to pick from), show the rewrite 2 to 3 verbatim passages that are off-topic from the text at hand, for rhythm only, never content. Rules in `references/voice-fingerprint.md`.
+- Allowlist: run the scanner with `--voice-dir <voice_dir>` so ids in `allow.json` (the author's own habits, such as fragments, And or But openers and parentheses) are not flagged. Hard tells are never skippable.
 - Voice fingerprint: match `signature_openings`, `paragraph_rhythm`, `idiom_inventory`, sentence-length pattern. Never import facts, names, or anecdotes from the sample; the rewrite's content comes only from the source text. Match the sample's habits, not staged imperfection: never fabricate typos, grammar errors, slang, or first-person experience the sample and source don't contain, and don't caricature the voice by amplifying its tics.
 
 "Never alter verbatim quotes, legal text, section numbers, or data" overrides everything above. The em and en dash ban (§14) is absolute: no voice, sample or fingerprint re-enables them. Dash habits recorded in `punctuation_quirks` only tell the rewrite where the author pauses, so it can place the replacement comma, period, colon or parentheses there.
