@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "humanizer",
   "description": "Remove signs of AI-generated writing from text, making it sound more natural and human. Based on Wikipedia's \"Signs of AI writing\" guide.",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "author": {
     "name": "dexteon, fork of blader/humanizer by Siqi Chen",
     "url": "https://cyberautomations.com"

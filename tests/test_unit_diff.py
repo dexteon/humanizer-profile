@@ -74,6 +74,11 @@ class UnitDiffTests(unittest.TestCase):
     def test_sentence_initial_word_not_a_name(self):
         self.assertTrue(ud.diff_texts("Growth slowed. Costs rose.", "Costs rose. Growth slowed.")["clean"])
 
+    def test_edit_ratio(self):
+        self.assertEqual(ud.diff_texts("one two three four", "one two three four")["edit_ratio"], 0.0)
+        r = ud.diff_texts("one two three four", "one two five six")["edit_ratio"]
+        self.assertAlmostEqual(r, 0.5, places=2)
+
     def test_cli_exit_codes(self):
         import subprocess
         import tempfile

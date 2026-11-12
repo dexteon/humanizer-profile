@@ -194,7 +194,9 @@ def compare(src: dict, new: dict) -> dict:
 def diff_texts(source: str, rewrite: str) -> dict:
     src, new = extract(source), extract(rewrite)
     kinds = compare(src, new)
-    return {"clean": not kinds, "kinds": kinds,
+    sw, nw = source.split(), rewrite.split()
+    ratio = 1.0 - difflib.SequenceMatcher(None, sw, nw, autojunk=False).ratio() if (sw or nw) else 0.0
+    return {"clean": not kinds, "kinds": kinds, "edit_ratio": round(ratio, 3),
             "source_items": {k: len(v) for k, v in src.items() if v},
             "rewrite_items": {k: len(v) for k, v in new.items() if v}}
 
@@ -227,6 +229,7 @@ def main(argv: list[str]) -> int:
                 print(f"[ADDED]   {kind}: {item}")
             for ch in d["changed"]:
                 print(f"[CHANGED] {kind}: {ch['from']}  ->  {ch['to']}")
+        print(f"edit ratio: {res['edit_ratio']} (share of words changed)")
         print("unit_diff: clean" if res["clean"] else "unit_diff: MISMATCH (fix the rewrite or confirm with the user)")
     return 0 if res["clean"] else 1
 
