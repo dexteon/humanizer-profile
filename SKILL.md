@@ -1,19 +1,12 @@
 ---
 name: humanizer
 description: |
-  Remove signs of AI-generated writing from text. Use when editing or reviewing
-  text to make it sound more natural and human-written. Based on Wikipedia's
-  comprehensive "Signs of AI writing" guide (38 patterns plus 9b). Detects and fixes:
-  inflated symbolism, promotional language, superficial -ing analyses, vague
-  attributions, em dash overuse, rule of three, AI vocabulary words, passive
-  voice, negative parallelisms, filler phrases, manufactured punchlines, and
-  aphorism formulas. Never invents facts, and guards against meaning shifts
-  (certainty, scope, attribution) during rewrites. Three invocation modes:
-  pasted text, file (in-place), embedded. Supports a saved preference profile
-  (dialect, grade, tone, length) and a persistent multi-voice fingerprint
-  library so writing samples are analyzed once and reused across runs.
-  Ships a deterministic tell scanner and an optional Jev meaning check. Loads
-  references/writing-craft.md for long-form reader-facing prose.
+  Remove signs of AI writing and match the author's saved voice. Use on any
+  text written as the user before it is saved or sent: resumes, cover letters,
+  job application answers, emails, agency letters, posts and docs. Never
+  invents facts, guards meaning, bans em and en dashes. Modes: pasted text,
+  file in place, embedded. Not for text shown to the user in dashboards or
+  alerts; write that in plain friendly English directly.
 license: MIT
 metadata:
   version: "3.1.0"
@@ -33,6 +26,7 @@ Run this FIRST, before the rewrite. Full procedure, subcommands and PowerShell: 
 - **Loud failure:** if a named or default voice cannot be loaded, the first output line is `Voice '<name>' not loaded: <reason>`. For text written as the user, stop and ask before rewriting without it. Never fall back silently.
 - Voice habits shape rhythm, openings, contractions and register. They never add facts, anecdotes, typos or slang the source lacks.
 - §14 is absolute: no voice, sample or fingerprint re-enables em or en dashes.
+- House rules: if `$HOME/.humanizer/house-rules.md` exists, read it before the rewrite. It outranks the profile and any voice, except §14.
 
 ## Your Task
 
