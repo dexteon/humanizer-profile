@@ -124,7 +124,9 @@ Rewrites follow a no-fabrication rule: they never add facts, names, dates, or ci
 
 > "LLMs use statistical algorithms to guess what should come next. The result tends toward the most statistically likely result that applies to the widest variety of cases."
 
-## 38 Patterns Detected (with Before/After Examples)
+## 39 Patterns Detected (with Before/After Examples)
+
+Headers in `SKILL.md` marked `[fading]` or `[historical]` are older tells that new models produce less often; untagged headers are current.
 
 ### Content Patterns
 
@@ -173,6 +175,7 @@ Rewrites follow a no-fabrication rule: they never add facts, names, dates, or ci
 | 37 | **Sentence-initial conjunction runs** | "And... But... So..." in a row | Keep one, merge the rest |
 | 38 | **Parenthetical density** | several asides per paragraph | Keep asides that add information |
 | 9b | **Copula-flip negation** | "The bottleneck is not compute. It is memory." | "Memory, not compute, limits it." |
+| 39 | **2026 tells** (39a-39d) | "speed rather than polish", "associated with", "primary sources identify", "sources may be unavailable" | State the relation or the claim directly; say what is not documented, or cut |
 
 ### Communication Patterns
 
@@ -227,6 +230,7 @@ Rewrites follow a no-fabrication rule: they never add facts, names, dates, or ci
 
 ## Version History
 
+- **3.2.0 (fork)** - Added post-rewrite checks and 2026 tells. `scripts/unit_diff.py` compares numbers with units and currency, dates, names, quoted spans, URLs, emails, form ids and statute cites between source and rewrite (a mismatch blocks delivery like an added claim) and reports an edit ratio. New section 39 (39a "Y rather than X", 39b vague "associated with", 39c primary-source phrasing, 39d source-availability disclaimers) with scanner patterns, plus scanner detectors for sections 31 and 38. Era tags on older pattern headers, current tells listed first in the ledger. `tell_scan.py --stats` prints style statistics per 1,000 words and a tell density score, `--compare FILE` shows a second text side by side, and `--voice-dir` skips the ids in a voice's `allow.json`. Comma check after the dash fix (section 14). Voice exemplars and per-voice allowlist documented in the references. `scripts/voice_distance.py` adds an advisory character n-gram distance to the voice sample. Added a prompt-injection guard, whole-file reads with the sections reviewed in file mode, and minimal-edit preference when the scan is already clean. The 500-line portability budget in `validate-package.py` is now 560 to fit these rules. Tests live in `tests/`.
 - **3.1.0 (fork)** - Made the em and en dash ban absolute again: a voice sample no longer re-enables dashes, because the owner's rule is absolute and his own fingerprint said never to reproduce them. Added tells 9b (copula-flip negation), 34 (fabricated experience, statistics and citations, which a v2 blog draft carried through a humanizer pass), 35-38. Added `scripts/tell_scan.py`, a deterministic per-tell counter with line numbers, after a run claimed zero hits on an article with four copula flips; the scan ledger is now required output, including in embedded mode. Added a claim map and an optional Jev check (`scripts/jev_check.py`) for meaning preservation and added claims. Missing voices now fail loudly instead of silently falling back. Moved profile and voice plumbing to `references/profile-and-voice.md`, fixed PowerShell commands that relied on variables from earlier shells, and dropped nonportable frontmatter keys.
 - **3.0.0 (fork)** - Merged upstream v2.9.1 into the fork (which had reused 2.8.0/2.9.0 for its own voice work, hence the major bump) and distilled writing-craft rules from [Anbeeld/WRITING.md](https://github.com/Anbeeld/WRITING.md) v1.4.1 into `references/writing-craft.md`: editing-integrity guards, do-not-perform rules, no-fabricated-messiness safeguards, cohesion/plain-words heuristics, and long-form diagnostics. Reconciled the em-dash rule with the voice fingerprint: an active voice whose sample genuinely uses em dashes now outranks the ban (upstream's stance), replacing the fork's earlier hard override.
 - **2.9.1 (upstream)** - Improved distribution and portability: removed nonportable frontmatter and tool preapprovals, made global installation the documented default, added package validation, and removed the duplicated long-form example from the runtime prompt. No change to the 33 patterns.
@@ -248,6 +252,11 @@ Rewrites follow a no-fabrication rule: they never add facts, names, dates, or ci
 - **2.1.0** - Added before/after examples for all 24 patterns
 - **2.0.0** - Complete rewrite based on raw Wikipedia article content
 - **1.0.0** - Initial release
+
+## Roadmap
+
+- Next: a local entailment check (a small model such as MiniCheck or AlignScore, run on CPU) in both directions between source and rewrite, to catch meaning shifts that the exact-value check in `unit_diff.py` cannot see.
+- Measured voice ranges (a script that fills the fingerprint numbers) and a four-block stability test for fingerprints.
 
 ## License
 
