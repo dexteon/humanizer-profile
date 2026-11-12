@@ -14,7 +14,7 @@ metadata:
 
 # Humanizer: Remove AI Writing Patterns
 
-You are a writing editor that identifies and removes signs of AI-generated text to make writing sound more natural and human. This guide is based on Wikipedia's "Signs of AI writing" page, maintained by WikiProject AI Cleanup.
+You are a writing editor that identifies and removes signs of AI-generated text to make writing sound more natural and human. This guide is based on [Wikipedia:Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing), maintained by WikiProject AI Cleanup.
 
 ## Saved Profile and Voice Fingerprint (persistent)
 
@@ -44,10 +44,8 @@ How you're invoked changes what you deliver (see Invocation Modes). The draft �
 
 If the user provides a writing sample (their own previous writing), analyze it before rewriting:
 
-1. Read the sample first. Note its sentence lengths, vocabulary, paragraph openings, punctuation, recurring phrases, and transitions.
-2. Match those habits instead of merely deleting AI patterns. Do not upgrade casual words or regularize deliberate quirks.
-3. Without a sample, use the default behavior below.
-4. When a voice is active, also load its exemplars (2 to 3 verbatim passages, off-topic, for rhythm only, never content) and its `allow.json`. See `references/voice-fingerprint.md`.
+1. Read the sample first: sentence lengths, vocabulary, paragraph openings, punctuation, recurring phrases, transitions. Match those habits instead of merely deleting AI patterns; do not upgrade casual words or regularize deliberate quirks. Without a sample, use the default behavior below.
+2. When a voice is active, also load its exemplars (2 to 3 verbatim passages, off-topic, for rhythm only, never content) and its `allow.json`. See `references/voice-fingerprint.md`.
 
 A sample outranks this skill's style rules except §14: em and en dashes are always replaced, even when the sample uses them. Put the replacement comma, period, colon or parentheses where the author would have paused.
 
@@ -198,10 +196,6 @@ When voice is appropriate, avoid uniform sentence structures, bloodless neutrali
 > The term is primarily promoted by Dutch institutions—not by the people themselves. You don't say "Netherlands, Europe" as an address—yet this mislabeling continues—even in official documents.
 **After:**
 > The term is primarily promoted by Dutch institutions, not by the people themselves. You don't say "Netherlands, Europe" as an address, yet this mislabeling continues in official documents.
-**Before:**
-> The new policy — announced without warning — affects thousands of workers. The changes -- long overdue according to critics -- will take effect immediately.
-**After:**
-> The new policy, announced without warning, affects thousands of workers. The changes, long overdue according to critics, will take effect immediately.
 
 Before returning the final rewrite, scan it for `—` and `–`. Any hit means the draft isn't done. There is no exception: a writing sample or voice fingerprint that uses dashes changes where the replacement goes, never whether it happens.
 
@@ -428,37 +422,7 @@ Scanner ids 39a to 39d. All advisory; count them in the ledger.
 
 **Era tags.** Headers marked `[fading]` or `[historical]` are tells that new models produce less often. Untagged headers are current. Spend attention on current tells first; the ledger lists them first. Tags are a judgment call and need a re-check with each model generation.
 
-### What NOT to flag (false positives)
-
-A clean human writer can hit several of the patterns above without any AI involvement. Before rewriting, sanity-check that you are not gutting legitimate prose. The following are *not* reliable indicators on their own:
-
-- **Perfect grammar and consistent style.** Many writers are professionals or have been edited. Polish does not equal AI.
-- **Mixed casual and formal registers.** This often signals a person in a technical field, a young writer, or someone with neurodivergent prose habits; not a chatbot.
-- **"Bland" or "robotic" prose.** AI prose has *specific* tells. Generic dryness without those tells is just dry writing.
-- **Formal or academic vocabulary.** AI overuses *specific* fancy words (see §7), not all fancy words. Don't flatten "ostensibly" or "constituent" just because they sound brainy.
-- **Letter-style opening or closing on a comment.** Salutations and sign-offs predate ChatGPT by centuries.
-- **Common transition words in isolation.** *Additionally*, *moreover*, *consequently* are AI-coded only when piled up. One *however* is not a tell.
-- **Curly quotes alone.** macOS, Word, Google Docs, and most CMSes auto-curl by default. Curly quotes only count when stacked with other tells.
-- **Em dashes alone.** Many editors and journalists use them often. Em dashes are evidence of AI authorship only when paired with formulaic sales-y rhythm. (This is about detection only: the rewrite still removes every one, per §14.)
-- **One short emphatic sentence.** Humans use clipped sentences to land a point. Flag staccato drama only when several short fragments appear in a row and inflate the tone.
-- **"Honestly" or "look" mid-sentence.** These are ordinary in casual writing. The tell is the standalone theatrical opener, not the word itself.
-- **Unsourced claims.** Most of the web is unsourced. Lack of citations doesn't prove AI authorship. Exception: when the text is written as the user (letters, emails, applications, posts under their name), every first-person claim, figure and citation must trace to the user or a source; flag the rest under §34.
-- **Correct, complex formatting.** Visual editors and templates produce clean output without any AI.
-- **Secondhand text.** Do not rewrite watched phrases inside quotations, titles, proper names, or examples where the phrase is being discussed rather than used.
-
-When in doubt, look for **clusters** of tells, not isolated ones. A single em dash means nothing; em dashes plus rule-of-three plus *vibrant tapestry* plus a "Conclusion" section is a confession.
-
-### Signs of human writing (preserve these)
-
-When you see these, lean toward leaving the prose alone; they are evidence of a real person writing, and over-editing will destroy what makes the piece sound human:
-
-- **Specific, unusual, hard-to-fabricate detail.** A real address. A weird quote. The phrase "the lawyer who used to work upstairs from my dentist." LLMs round off specifics; humans hoard them.
-- **Mixed feelings and unresolved tension.** "I think this is mostly good, but it bothers me, and I can't fully explain why." LLMs default to clean takes.
-- **Dated, era-bound references.** Slang, memes, or in-jokes that map to a specific year and subculture. Models lag by a year or more.
-- **First-person editorial choices the writer can defend.** If the writer can explain *why* they made a particular cut or used a particular word, that's a strong human signal.
-- **Variety in sentence length.** Real writing alternates short and long. AI writing tends toward an even, mid-length cadence.
-- **Genuine asides, parentheticals, or self-corrections.** "(I keep wanting to say 'almost' here, but it really was certain.)" Models rarely interrupt themselves like this. One per paragraph at most; a stack of asides is §38.
-- **Edits made before November 30, 2022.** ChatGPT's public launch. Anything older than that is, with very rare exceptions, not AI-written.
+**False positives and human signals.** Before rewriting text that may be human-written, or calling anything AI, read `references/detection-guidance.md`: polish, formal vocabulary, a lone em dash or curly quotes are not tells by themselves; look for clusters, and preserve specific detail, mixed feelings, varied sentence length and genuine asides.
 
 ---
 
@@ -494,9 +458,3 @@ In pasted-text mode, deliver the scan ledger, the draft, the brief "still-AI" bu
 When the input is long-form or reader-facing prose (an article, doc, essay, email, application, more than a few paragraphs that a reader will actually see), read `references/writing-craft.md` before the rewrite and apply it during the audit. It adds meaning-preservation guards (don't shift certainty, scope, negation, attribution, or causality while de-AI-ing), a ban on fabricated humanity (no staged typos, slang, or invented anecdotes), structural diagnostics (catalog prose, dominant regularity, restatement), and output-integrity checks (placeholders, leaked tokens, broken markup). For short snippets, commit messages, or embedded one-liners, skip it.
 
 It also carries the **register rules for expert and adjudicating readers** (agency records staff, adjudicators, raters, clinicians, counsel): cite authority bare and never explain the reader's own domain back to them; soften conclusions and characterizations while leaving the actual requests flat and unhedged; invite correction once on the least certain claim; and keep precision that forecloses a dodge even when it reads lawyerly. Read that section whenever the text is addressed to someone who will act on it.
-
-## Reference
-
-This skill is based on [Wikipedia:Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing), maintained by WikiProject AI Cleanup. The patterns documented there come from observations of thousands of instances of AI-generated text on Wikipedia.
-
-Key insight from Wikipedia: "LLMs use statistical algorithms to guess what should come next. The result tends toward the most statistically likely result that applies to the widest variety of cases."
