@@ -48,7 +48,7 @@ class NewTellTests(unittest.TestCase):
 
 class AllowlistTests(unittest.TestCase):
     def test_allow_skips_advisory_not_hard(self):
-        text = "And so it went. But why? So we left.\n\nIt ended — done."
+        text = "And so it went. But why? So we left.\n\nIt ended " + chr(0x2014) + " done."
         self.assertIn("37", ids(text))
         got = ids(text, {"37", "14"})
         self.assertNotIn("37", got)
@@ -113,7 +113,7 @@ class StatsTests(unittest.TestCase):
                                  capture_output=True, text=True)
             self.assertEqual(bad.returncode, 2)
             hard = pathlib.Path(d, "h.txt")
-            hard.write_text("It ended — done.", encoding="utf-8")
+            hard.write_text("It ended " + chr(0x2014) + " done.", encoding="utf-8")
             self.assertEqual(subprocess.run([sys.executable, "-X", "utf8", script, str(hard)],
                                             capture_output=True).returncode, 1)
 
